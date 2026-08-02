@@ -1,0 +1,23 @@
+{
+  "name": "coform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Production-grade coordinate transformation & concatenation for CV and robotics",
+  "workspaces": [
+    "packages/core",
+    "packages/frontend",
+    "packages/desktop",
+    "packages/mobile"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace=packages/frontend",
+    "build:frontend": "npm run build --workspace=packages/frontend",
+    "dev:core": "npm run build --workspace=packages/core -- --watch",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

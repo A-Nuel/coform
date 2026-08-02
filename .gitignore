@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Env
+.env
+.env.local
+*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Testing
+coverage/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+
+# Build
+packages/frontend/dist/
+packages/desktop/src-tauri/target/
+packages/mobile/android/
+packages/mobile/ios/
+*.AppImage
+*.dmg
+*.exe
+
+# Docker
+.docker/
+
+# Misc
+*.npy
+*.ply
+tmp/
+.cache/

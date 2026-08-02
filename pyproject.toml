@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "coform"
+version = "0.1.0"
+description = "Production-grade coordinate transformation & concatenation for CV and robotics"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Coform Contributors" }]
+dependencies = [
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "opencv-python-headless>=4.8",
+  "open3d>=0.18",
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.27",
+  "pydantic>=2.6",
+  "python-multipart>=0.0.9",
+  "pillow>=10.0",
+  "orjson>=3.9",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=4.1",
+  "httpx>=0.27",
+  "ruff>=0.3",
+  "mypy>=1.8",
+  "types-Pillow",
+]
+
+[project.scripts]
+coform = "coform.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["packages/backend"]
+include = ["coform*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["packages/backend"]
