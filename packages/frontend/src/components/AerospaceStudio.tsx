@@ -55,11 +55,10 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
   );
 
   const copyResults = () => {
-    const text = `--- COFORM AEROSPACE TRANSFORM REPORT ---
-Reference (Launch Station): Lat=${refLat}°, Lon=${refLon}°, Alt=${refAlt}m
+    const text = `Reference: Lat=${refLat}°, Lon=${refLon}°, Alt=${refAlt}m
 Reference ECEF [m]: X=${refECEF[0].toFixed(2)}, Y=${refECEF[1].toFixed(2)}, Z=${refECEF[2].toFixed(2)}
 
-Target Missile GPS: Lat=${targetLat}°, Lon=${targetLon}°, Alt=${targetAlt}m
+Target GPS: Lat=${targetLat}°, Lon=${targetLon}°, Alt=${targetAlt}m
 Target ECEF [m]: X=${targetECEF[0].toFixed(2)}, Y=${targetECEF[1].toFixed(2)}, Z=${targetECEF[2].toFixed(2)}
 
 Local NED Frame [m]: North=${north.toFixed(2)}, East=${east.toFixed(2)}, Up=${up.toFixed(2)}

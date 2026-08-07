@@ -137,8 +137,6 @@ export interface TransformTree {
   nodes: Record<string, TransformTreeNode>;
 }
 
-// --- Multi-Domain Types ---
-
 export type DomainType = "aerospace" | "robotics" | "vision" | "gis" | "math";
 export type ExperienceLevel = "beginner" | "expert";
 

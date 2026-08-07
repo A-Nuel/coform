@@ -188,13 +188,10 @@ export function slerp(q1: Quaternion, q2: Quaternion, t: number): Quaternion {
   ];
 }
 
-// --- WGS-84 Geodetic & ECEF Aerospace Math ---
+const WGS84_A = 6378137.0;
+const WGS84_F = 1 / 298.257223563;
+const WGS84_E2 = 2 * WGS84_F - WGS84_F * WGS84_F;
 
-const WGS84_A = 6378137.0; // semi-major axis (meters)
-const WGS84_F = 1 / 298.257223563; // flattening
-const WGS84_E2 = 2 * WGS84_F - WGS84_F * WGS84_F; // eccentricity squared
-
-/** Convert WGS-84 Geodetic (Lat, Lon in degrees, Alt in meters) to ECEF (X, Y, Z meters) */
 export function geodeticToECEF(lat: number, lon: number, alt: number): Vec3 {
   const phi = degToRad(lat);
   const lambda = degToRad(lon);
