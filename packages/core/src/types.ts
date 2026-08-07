@@ -137,6 +137,79 @@ export interface TransformTree {
   nodes: Record<string, TransformTreeNode>;
 }
 
+// --- Multi-Domain Types ---
+
+export type DomainType = "aerospace" | "robotics" | "vision" | "gis" | "math";
+export type ExperienceLevel = "beginner" | "expert";
+
+/** Geodetic WGS-84 Point (Latitude, Longitude in degrees, Altitude in meters) */
+export interface GeodeticPoint {
+  lat: number;
+  lon: number;
+  alt: number;
+}
+
+/** ECEF (Earth-Centered Earth-Fixed) 3D coordinate in meters */
+export interface ECEFPoint {
+  x: number;
+  y: number;
+  z: number;
+}
+
+/** Local Tangent Plane: NED (North-East-Down) or ENU (East-North-Up) */
+export interface LocalTangentPoint {
+  north: number;
+  east: number;
+  down: number;
+}
+
+export type EulerConvention =
+  | "XYZ"
+  | "ZYX"
+  | "ZXZ"
+  | "XYX"
+  | "XZX"
+  | "XZY"
+  | "YXZ"
+  | "YZX"
+  | "YXY"
+  | "YZY"
+  | "ZXY"
+  | "ZYZ";
+
+export interface EulerAngles {
+  roll: number;  // radians or degrees depending on flag
+  pitch: number;
+  yaw: number;
+  convention: EulerConvention;
+}
+
+export interface CameraIntrinsics {
+  fx: number;
+  fy: number;
+  cx: number;
+  cy: number;
+  s?: number; // skew
+}
+
+export interface DistortionCoeffs {
+  k1: number;
+  k2: number;
+  p1: number;
+  p2: number;
+  k3?: number;
+}
+
+/** Denavit-Hartenberg (DH) parameter link for robot arms */
+export interface DHLink {
+  id: string;
+  name: string;
+  a: number;      // link length
+  alpha: number;  // link twist (radians)
+  d: number;      // link offset
+  theta: number;  // joint angle (radians)
+}
+
 /** Standard request/response envelopes used by the API */
 export interface ApplyTransformRequest {
   transform: Transform;
@@ -158,3 +231,4 @@ export interface ComposeResponse {
   result: Transform;
   matrix: number[][];
 }
+

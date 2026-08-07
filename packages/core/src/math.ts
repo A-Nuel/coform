@@ -187,3 +187,152 @@ export function slerp(q1: Quaternion, q2: Quaternion, t: number): Quaternion {
     a * w1 + b * w2,
   ];
 }
+
+// --- WGS-84 Geodetic & ECEF Aerospace Math ---
+
+const WGS84_A = 6378137.0; // semi-major axis (meters)
+const WGS84_F = 1 / 298.257223563; // flattening
+const WGS84_E2 = 2 * WGS84_F - WGS84_F * WGS84_F; // eccentricity squared
+
+/** Convert WGS-84 Geodetic (Lat, Lon in degrees, Alt in meters) to ECEF (X, Y, Z meters) */
+export function geodeticToECEF(lat: number, lon: number, alt: number): Vec3 {
+  const phi = degToRad(lat);
+  const lambda = degToRad(lon);
+  const sinPhi = Math.sin(phi);
+  const cosPhi = Math.cos(phi);
+  const sinLambda = Math.sin(lambda);
+  const cosLambda = Math.cos(lambda);
+
+  const N = WGS84_A / Math.sqrt(1 - WGS84_E2 * sinPhi * sinPhi);
+
+  const x = (N + alt) * cosPhi * cosLambda;
+  const y = (N + alt) * cosPhi * sinLambda;
+  const z = (N * (1 - WGS84_E2) + alt) * sinPhi;
+
+  return [x, y, z];
+}
+
+/** Convert ECEF (X, Y, Z meters) to WGS-84 Geodetic (Lat, Lon in deg, Alt in meters) */
+export function ecefToGeodetic(x: number, y: number, z: number): { lat: number; lon: number; alt: number } {
+  const lon = radToDeg(Math.atan2(y, x));
+  const p = Math.sqrt(x * x + y * y);
+  
+  let phi = Math.atan2(z, p * (1 - WGS84_E2));
+  let oldPhi = 0;
+  let N = WGS84_A;
+  let iter = 0;
+
+  while (Math.abs(phi - oldPhi) > 1e-12 && iter < 20) {
+    oldPhi = phi;
+    const sinPhi = Math.sin(phi);
+    N = WGS84_A / Math.sqrt(1 - WGS84_E2 * sinPhi * sinPhi);
+    phi = Math.atan2(z + WGS84_E2 * N * sinPhi, p);
+    iter++;
+  }
+
+  const sinPhi = Math.sin(phi);
+  const alt = p / Math.cos(phi) - N;
+
+  return { lat: radToDeg(phi), lon, alt };
+}
+
+/** ECEF point to Local Tangent Plane NED (North-East-Down meters) relative to reference lat/lon/alt */
+export function ecefToNED(pEcef: Vec3, refLat: number, refLon: number, refAlt: number): Vec3 {
+  const refEcef = geodeticToECEF(refLat, refLon, refAlt);
+  const dx = pEcef[0] - refEcef[0];
+  const dy = pEcef[1] - refEcef[1];
+  const dz = pEcef[2] - refEcef[2];
+
+  const phi = degToRad(refLat);
+  const lambda = degToRad(refLon);
+
+  const sPhi = Math.sin(phi);
+  const cPhi = Math.cos(phi);
+  const sLam = Math.sin(lambda);
+  const cLam = Math.cos(lambda);
+
+  const north = -sPhi * cLam * dx - sPhi * sLam * dy + cPhi * dz;
+  const east = -sLam * dx + cLam * dy;
+  const down = -cPhi * cLam * dx - cPhi * sLam * dy - sPhi * dz;
+
+  return [north, east, down];
+}
+
+// --- Euler Angle & Rotation Conventions ---
+
+/** Convert Roll, Pitch, Yaw (ZYX aerospace sequence, in radians) to Quaternion [x, y, z, w] */
+export function eulerZYXToQuat(roll: number, pitch: number, yaw: number): Quaternion {
+  const cy = Math.cos(yaw * 0.5);
+  const sy = Math.sin(yaw * 0.5);
+  const cp = Math.cos(pitch * 0.5);
+  const sp = Math.sin(pitch * 0.5);
+  const cr = Math.cos(roll * 0.5);
+  const sr = Math.sin(roll * 0.5);
+
+  const w = cr * cp * cy + sr * sp * sy;
+  const x = sr * cp * cy - cr * sp * sy;
+  const y = cr * sp * cy + sr * cp * sy;
+  const z = cr * cp * sy - sr * sp * cy;
+
+  return [x, y, z, w];
+}
+
+/** Convert Quaternion [x, y, z, w] to Roll, Pitch, Yaw (ZYX aerospace sequence, in radians) */
+export function quatToEulerZYX(q: Quaternion): { roll: number; pitch: number; yaw: number } {
+  const [x, y, z, w] = q;
+
+  // roll (x-axis rotation)
+  const sinr_cosp = 2 * (w * x + y * z);
+  const cosr_cosp = 1 - 2 * (x * x + y * y);
+  const roll = Math.atan2(sinr_cosp, cosr_cosp);
+
+  // pitch (y-axis rotation)
+  const sinp = 2 * (w * y - z * x);
+  let pitch = 0;
+  if (Math.abs(sinp) >= 1) pitch = (Math.sign(sinp) * Math.PI) / 2;
+  else pitch = Math.asin(sinp);
+
+  // yaw (z-axis rotation)
+  const siny_cosp = 2 * (w * z + x * y);
+  const cosy_cosp = 1 - 2 * (y * y + z * z);
+  const yaw = Math.atan2(siny_cosp, cosy_cosp);
+
+  return { roll, pitch, yaw };
+}
+
+// --- Denavit-Hartenberg (DH) Parameters for Robotics ---
+
+export function dhToMatrix(a: number, alpha: number, d: number, theta: number): Mat4 {
+  const ct = Math.cos(theta);
+  const st = Math.sin(theta);
+  const ca = Math.cos(alpha);
+  const sa = Math.sin(alpha);
+
+  return [
+    [ct, -st * ca, st * sa, a * ct],
+    [st, ct * ca, -ct * sa, a * st],
+    [0, sa, ca, d],
+    [0, 0, 0, 1],
+  ];
+}
+
+// --- Camera Projection & Intrinsics ---
+
+export function cameraIntrinsicsMatrix(fx: number, fy: number, cx: number, cy: number, s = 0): Mat3 {
+  return [
+    [fx, s, cx],
+    [0, fy, cy],
+    [0, 0, 1],
+  ];
+}
+
+export function project3DTo2DPlane(p3d: Vec3, K: Mat3): Vec2 | null {
+  const [X, Y, Z] = p3d;
+  if (Z <= 1e-6) return null; // Behind or on camera plane
+
+  const u = (K[0][0] * X + K[0][1] * Y + K[0][2] * Z) / Z;
+  const v = (K[1][1] * Y + K[1][2] * Z) / Z;
+
+  return [u, v];
+}
+
