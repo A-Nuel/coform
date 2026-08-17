@@ -53,3 +53,27 @@ packages/mobile/ios/
 *.ply
 tmp/
 .cache/
+# Dependencies
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+
+# Build outputs
+packages/frontend/dist/
+packages/core/dist/
+
+# Env files
+.env
+.env.local
+.env.production
+
+# Tauri build
+packages/desktop/src-tauri/target/
+
+# Capacitor native projects (generated — add android/ and ios/ to track if you want)
+packages/mobile/android/
+packages/mobile/ios/
+
+# Misc
+.DS_Store
