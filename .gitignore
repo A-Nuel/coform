@@ -44,6 +44,7 @@ packages/mobile/ios/
 *.AppImage
 *.dmg
 *.exe
+*.tsbuildinfo
 
 # Docker
 .docker/
