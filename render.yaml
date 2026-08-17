@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: coform-backend
+    runtime: docker
+    dockerfilePath: docker/Dockerfile.backend.prod
+    plan: free
+    envVars:
+      - key: ALLOWED_ORIGINS
+        value: https://your-app.vercel.app
+    healthCheckPath: /api/v1/health
