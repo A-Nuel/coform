@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="16" fill="#080c14" />
+  <rect x="2" y="2" width="60" height="60" rx="14" stroke="#06b6d4" stroke-width="2" stroke-opacity="0.4" />
+  
+  <!-- Outer Coordinate Ring -->
+  <circle cx="32" cy="32" r="22" stroke="#1e293b" stroke-width="2" stroke-dasharray="3 3" />
+  
+  <!-- Coordinate Axes Triad -->
+  <!-- X Axis (Red) -->
+  <line x1="32" y1="32" x2="48" y2="40" stroke="#ef4444" stroke-width="3" stroke-linecap="round" />
+  <!-- Y Axis (Green) -->
+  <line x1="32" y1="32" x2="18" y2="38" stroke="#22c55e" stroke-width="3" stroke-linecap="round" />
+  <!-- Z Axis (Blue/Cyan Up) -->
+  <line x1="32" y1="32" x2="32" y2="14" stroke="#06b6d4" stroke-width="3.5" stroke-linecap="round" />
+  
+  <!-- Center Origin Core -->
+  <circle cx="32" cy="32" r="4.5" fill="#38bdf8" />
+  <circle cx="32" cy="32" r="2" fill="#ffffff" />
+  
+  <!-- Compass Needle Arrow Head -->
+  <polygon points="32,10 28,18 36,18" fill="#22d3ee" />
+</svg>

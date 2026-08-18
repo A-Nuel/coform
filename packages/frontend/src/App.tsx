@@ -9,6 +9,7 @@ import { VisionStudio } from "./components/VisionStudio";
 import { LieGroupStudio } from "./components/LieGroupStudio";
 import { TransformTreeStudio } from "./components/TransformTreeStudio";
 import { CodeExportModal, type PipelineAction } from "./components/CodeExportModal";
+import { AppIntroModal } from "./components/AppIntroModal";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
 
@@ -17,6 +18,9 @@ export default function App() {
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>("beginner");
   const [backendConnected, setBackendConnected] = useState<boolean>(false);
   const [isPresetsOpen, setIsPresetsOpen] = useState<boolean>(false);
+  const [isIntroOpen, setIsIntroOpen] = useState<boolean>(() => {
+    return !localStorage.getItem("coform_intro_seen");
+  });
 
   // Code Export Modal State
   const [isCodeModalOpen, setIsCodeModalOpen] = useState<boolean>(false);
@@ -79,6 +83,7 @@ export default function App() {
         backendConnected={backendConnected}
         onOpenPresets={() => setIsPresetsOpen(true)}
         onOpenCodeExport={() => setIsCodeModalOpen(true)}
+        onOpenGuide={() => setIsIntroOpen(true)}
       />
 
       {/* Main Studio Viewport Area */}
@@ -113,6 +118,15 @@ export default function App() {
         isOpen={isPresetsOpen}
         onClose={() => setIsPresetsOpen(false)}
         onSelectPreset={handleSelectPreset}
+      />
+
+      {/* Interactive Platform Introduction & Interface Guide */}
+      <AppIntroModal
+        isOpen={isIntroOpen}
+        onClose={() => {
+          localStorage.setItem("coform_intro_seen", "true");
+          setIsIntroOpen(false);
+        }}
       />
 
       {/* On-Demand Polyglot Code Export Modal */}

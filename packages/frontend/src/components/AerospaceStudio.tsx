@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Grid, GizmoHelper, GizmoViewport, Line, Text } from "@react-three/drei";
+import { OrbitControls, Grid, GizmoHelper, GizmoViewport, Line } from "@react-three/drei";
+import type { ExperienceLevel } from "@coform/core";
 import {
   geodeticToECEF,
   ecefToNED,
@@ -8,19 +9,20 @@ import {
   degToRad,
   radToDeg,
 } from "@coform/core";
-import type { ExperienceLevel } from "@coform/core";
 import {
   Rocket,
+  Globe,
   MapPin,
   Compass,
+  Navigation,
   Copy,
   Check,
-  Navigation,
-  Globe,
   Radio,
   Eye,
   Crosshair,
   Layers,
+  Flame,
+  Activity,
 } from "lucide-react";
 
 interface AerospaceStudioProps {
@@ -35,27 +37,84 @@ const SPACEPORT_PRESETS = [
   { name: "Baikonur Cosmodrome", lat: 45.965, lon: 63.305, alt: 90 },
 ];
 
-const TARGET_PRESETS = [
-  { name: "Low-Altitude Radar Track", latOffset: 0.08, lonOffset: 0.08, alt: 3500, yaw: 45, pitch: 15, roll: 0 },
-  { name: "Atmospheric Interceptor", latOffset: 0.25, lonOffset: 0.15, alt: 18000, yaw: 65, pitch: 42, roll: 10 },
-  { name: "Suborbital Boost Phase", latOffset: 0.5, lonOffset: 0.4, alt: 65000, yaw: 90, pitch: 60, roll: 5 },
+const MISSILE_TRAJECTORY_PRESETS = [
+  {
+    id: "icbm",
+    name: "ICBM Suborbital Ballistic Arc",
+    desc: "Vandenberg SLC-4E to Pacific Impact Point (Mach 20)",
+    refLat: 34.632,
+    refLon: -120.611,
+    refAlt: 110,
+    targetLat: 34.95,
+    targetLon: -120.15,
+    targetAlt: 45000, // 45 km apogee segment
+    yaw: 48,
+    pitch: 58,
+    roll: 5,
+    arcHeightFactor: 1.8,
+  },
+  {
+    id: "sam_intercept",
+    name: "Surface-to-Air Intercept Cone",
+    desc: "Patriot MIM-104 Radar Lock vs Inbound Target",
+    refLat: 28.5621,
+    refLon: -80.5772,
+    refAlt: 10,
+    targetLat: 28.74,
+    targetLon: -80.38,
+    targetAlt: 18000, // 18 km MSL
+    yaw: 62,
+    pitch: 38,
+    roll: 12,
+    arcHeightFactor: 1.2,
+  },
+  {
+    id: "hypersonic",
+    name: "Hypersonic Boost-Glide Re-entry",
+    desc: "Mach 7 Atmospheric Skip-Glide Vector",
+    refLat: 25.9972,
+    refLon: -97.1561,
+    refAlt: 5,
+    targetLat: 26.35,
+    targetLon: -96.65,
+    targetAlt: 35000, // 35 km MSL
+    yaw: 75,
+    pitch: 18,
+    roll: 25,
+    arcHeightFactor: 1.1,
+  },
+  {
+    id: "leo_radar",
+    name: "LEO Satellite Radar Acquisition",
+    desc: "Orbital Overflight Acquisition Pass (400 km)",
+    refLat: 45.965,
+    refLon: 63.305,
+    refAlt: 90,
+    targetLat: 46.5,
+    targetLon: 64.2,
+    targetAlt: 50000,
+    yaw: 35,
+    pitch: 72,
+    roll: 0,
+    arcHeightFactor: 1.4,
+  },
 ];
 
 export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLevel }) => {
   // Launch Station Reference Origin (WGS-84)
-  const [refLat, setRefLat] = useState(28.5621);
-  const [refLon, setRefLon] = useState(-80.5772);
-  const [refAlt, setRefAlt] = useState(10); // meters
+  const [refLat, setRefLat] = useState(34.632);
+  const [refLon, setRefLon] = useState(-120.611);
+  const [refAlt, setRefAlt] = useState(110); // meters
 
   // Missile / Target Position (WGS-84)
-  const [targetLat, setTargetLat] = useState(28.72);
-  const [targetLon, setTargetLon] = useState(-80.42);
-  const [targetAlt, setTargetAlt] = useState(12000); // 12 km MSL
+  const [targetLat, setTargetLat] = useState(34.95);
+  const [targetLon, setTargetLon] = useState(-120.15);
+  const [targetAlt, setTargetAlt] = useState(45000); // 45 km MSL
 
   // Missile Flight Attitude (Euler ZYX in degrees: Yaw=Azimuth, Pitch=Elevation, Roll)
-  const [yawDeg, setYawDeg] = useState(55);
-  const [pitchDeg, setPitchDeg] = useState(35);
-  const [rollDeg, setRollDeg] = useState(10);
+  const [yawDeg, setYawDeg] = useState(48);
+  const [pitchDeg, setPitchDeg] = useState(58);
+  const [rollDeg, setRollDeg] = useState(5);
 
   const [copied, setCopied] = useState(false);
 
@@ -78,6 +137,18 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
     degToRad(pitchDeg),
     degToRad(yawDeg)
   );
+
+  const applyPreset = (preset: typeof MISSILE_TRAJECTORY_PRESETS[0]) => {
+    setRefLat(preset.refLat);
+    setRefLon(preset.refLon);
+    setRefAlt(preset.refAlt);
+    setTargetLat(preset.targetLat);
+    setTargetLon(preset.targetLon);
+    setTargetAlt(preset.targetAlt);
+    setYawDeg(preset.yaw);
+    setPitchDeg(preset.pitch);
+    setRollDeg(preset.roll);
+  };
 
   const copyResults = () => {
     const report = {
@@ -119,6 +190,23 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
   const vizTarget: [number, number, number] = [east / 1000, up / 1000, -north / 1000];
   const vizGroundFootprint: [number, number, number] = [east / 1000, 0, -north / 1000];
 
+  // 3D Parabolic Ballistic Trajectory Curve Points (Launch -> Apogee Arc -> Target)
+  const trajectoryCurve = useMemo(() => {
+    const pointsCount = 30;
+    const pts: [number, number, number][] = [];
+    const apexBonus = (up / 1000) * 0.35; // Apex curvature height
+
+    for (let i = 0; i <= pointsCount; i++) {
+      const t = i / pointsCount;
+      const x = (east / 1000) * t;
+      const z = (-north / 1000) * t;
+      // Parabolic flight arc: linear interpolate + parabolic hump 4*t*(1-t)
+      const y = (up / 1000) * t + 4 * t * (1 - t) * Math.max(2, apexBonus);
+      pts.push([x, y, z]);
+    }
+    return pts;
+  }, [east, up, north]);
+
   return (
     <div className="flex flex-col lg:flex-row h-full overflow-hidden bg-[#080c14]">
       {/* Sidebar Control Panel */}
@@ -135,7 +223,7 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
               </h2>
             </div>
             <p className="text-[11px] text-slate-400">
-              WGS-84 Geodetic $\leftrightarrow$ ECEF $\leftrightarrow$ Local Tangent NED Radar
+              WGS-84 Geodetic $\leftrightarrow$ ECEF $\leftrightarrow$ Topocentric NED Radar
             </p>
           </div>
           <span className="rounded-md bg-amber-950/60 px-2 py-0.5 text-[10px] font-mono font-medium text-amber-400 border border-amber-800/50">
@@ -143,25 +231,38 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
           </span>
         </div>
 
-        {experienceLevel === "beginner" && (
-          <div className="rounded-xl bg-gradient-to-r from-amber-950/40 to-slate-900 border border-amber-500/30 p-3.5 text-xs text-amber-200/90 space-y-1.5 shadow-sm">
-            <div className="flex items-center gap-1.5 font-bold text-amber-300">
-              <Radio className="w-3.5 h-3.5 text-amber-400" />
-              <span>How Aerospace Radar Coordinate Conversion Works:</span>
-            </div>
-            <p className="text-[11px] text-slate-300 leading-relaxed">
-              1. Choose a <strong>Launch Station / Radar Origin</strong> (GPS Latitude & Longitude).<br />
-              2. Adjust the <strong>Target Missile Position</strong> and <strong>Altitude</strong>.<br />
-              3. Coform computes the 3D ECEF vector and relative <strong>Azimuth, Elevation & Slant Range</strong>.
-            </p>
+        {/* Realistic Missile Trajectory Presets */}
+        <div className="space-y-2">
+          <label className="text-[10px] font-mono font-semibold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+            <Flame className="w-3.5 h-3.5" />
+            <span>Missile & Flight Trajectory Presets</span>
+          </label>
+          <div className="grid grid-cols-1 gap-2">
+            {MISSILE_TRAJECTORY_PRESETS.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => applyPreset(p)}
+                className="flex items-start justify-between rounded-xl bg-slate-900/90 hover:bg-amber-500/10 border border-slate-800 hover:border-amber-500/50 p-2.5 text-left transition group"
+              >
+                <div className="space-y-0.5">
+                  <div className="text-xs font-bold text-slate-200 group-hover:text-amber-300 transition">
+                    {p.name}
+                  </div>
+                  <div className="text-[10px] text-slate-400">{p.desc}</div>
+                </div>
+                <span className="rounded bg-amber-950/80 px-2 py-0.5 text-[9px] font-mono font-bold text-amber-400 border border-amber-800/40 shrink-0">
+                  {(p.targetAlt / 1000).toFixed(0)} km
+                </span>
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
-        {/* Spaceport Presets */}
-        <div className="space-y-1.5">
+        {/* Spaceport Origin Base Selection */}
+        <div className="space-y-1.5 pt-1">
           <label className="text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <Globe className="w-3 h-3 text-amber-400" />
-            <span>Launch Base Presets</span>
+            <Globe className="w-3 h-3 text-slate-400" />
+            <span>Quick Launch Station Origins</span>
           </label>
           <div className="grid grid-cols-2 gap-1.5">
             {SPACEPORT_PRESETS.slice(0, 4).map((p) => (
@@ -172,7 +273,7 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
                   setRefLon(p.lon);
                   setRefAlt(p.alt);
                 }}
-                className="truncate rounded-lg bg-slate-900/90 hover:bg-amber-500/10 border border-slate-800 hover:border-amber-500/40 px-2.5 py-1.5 text-left text-[11px] font-medium text-slate-300 hover:text-amber-200 transition"
+                className="truncate rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 px-2 py-1 text-left text-[10px] font-medium text-slate-300 transition"
               >
                 {p.name.split(" ")[0]} ({p.lat.toFixed(1)}°)
               </button>
@@ -185,7 +286,7 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400 uppercase tracking-wider font-mono">
               <MapPin className="w-3.5 h-3.5" />
-              <span>Launch Origin Station</span>
+              <span>Launch / Radar Station Origin</span>
             </div>
             <span className="text-[10px] font-mono text-slate-500">ORIGIN (0,0,0)</span>
           </div>
@@ -214,9 +315,16 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
           </div>
 
           <div>
-            <div className="flex justify-between text-[11px] text-slate-400 mb-1">
-              <span>Ground Elevation (MSL)</span>
-              <span className="font-mono text-amber-400">{refAlt} m</span>
+            <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
+              <span>Ground Elevation (MSL m)</span>
+              <input
+                type="number"
+                min={0}
+                max={1000}
+                value={refAlt}
+                onChange={(e) => setRefAlt(+e.target.value)}
+                className="w-16 rounded bg-slate-900 border border-slate-700 px-1 py-0.5 text-xs text-amber-300 font-mono text-right"
+              />
             </div>
             <input
               type="range"
@@ -270,7 +378,7 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
                 type="number"
                 step="100"
                 min={500}
-                max={50000}
+                max={60000}
                 value={targetAlt}
                 onChange={(e) => setTargetAlt(+e.target.value)}
                 className="w-20 rounded bg-slate-900 border border-slate-700 px-1.5 py-0.5 text-xs text-cyan-300 font-mono text-right"
@@ -279,7 +387,7 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
             <input
               type="range"
               min={500}
-              max={50000}
+              max={60000}
               step={250}
               value={targetAlt}
               onChange={(e) => setTargetAlt(+e.target.value)}
@@ -422,7 +530,7 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
 
         {/* Three.js 3D Viewport */}
         <div className="flex-1 w-full h-full cursor-grab active:cursor-grabbing">
-          <Canvas camera={{ position: [20, 16, 20], fov: 45 }}>
+          <Canvas camera={{ position: [25, 20, 25], fov: 45 }}>
             <ambientLight intensity={0.7} />
             <directionalLight position={[15, 25, 15]} intensity={1.2} />
             <pointLight position={[0, 5, 0]} intensity={0.5} color="#f59e0b" />
@@ -430,7 +538,7 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
             {/* Local Tangent Plane Infinite Grid */}
             <Grid
               infiniteGrid
-              fadeDistance={60}
+              fadeDistance={80}
               sectionSize={5}
               sectionColor="#334155"
               cellColor="#0f172a"
@@ -474,14 +582,29 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
               lineWidth={1.5}
             />
 
-            {/* Target Missile Cone Body */}
+            {/* Parabolic Ballistic Trajectory Curve Line */}
+            <Line
+              points={trajectoryCurve}
+              color="#22d3ee"
+              lineWidth={3.5}
+            />
+
+            {/* Trajectory Waypoints Along the Flight Path */}
+            {trajectoryCurve.filter((_, idx) => idx % 6 === 0 && idx > 0 && idx < trajectoryCurve.length - 1).map((pt, i) => (
+              <mesh key={`waypoint-${i}`} position={pt}>
+                <sphereGeometry args={[0.15, 16, 16]} />
+                <meshStandardMaterial color="#38bdf8" emissive="#0284c7" emissiveIntensity={0.8} />
+              </mesh>
+            ))}
+
+            {/* Target Missile Body (Cone + Cylinder) */}
             <group position={vizTarget} rotation={[degToRad(-pitchDeg), degToRad(-yawDeg), degToRad(rollDeg)]}>
               <mesh position={[0, 0.6, 0]}>
-                <coneGeometry args={[0.35, 1.2, 32]} />
-                <meshStandardMaterial color="#22d3ee" emissive="#0891b2" emissiveIntensity={0.8} />
+                <coneGeometry args={[0.4, 1.3, 32]} />
+                <meshStandardMaterial color="#f43f5e" emissive="#e11d48" emissiveIntensity={0.8} />
               </mesh>
               <mesh position={[0, -0.2, 0]}>
-                <cylinderGeometry args={[0.25, 0.25, 0.8, 32]} />
+                <cylinderGeometry args={[0.28, 0.28, 0.9, 32]} />
                 <meshStandardMaterial color="#0284c7" />
               </mesh>
             </group>
@@ -501,12 +624,12 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
               <span className="font-medium text-xs">Origin Radar</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
-              <span className="font-medium text-xs">Target Vehicle</span>
+              <span className="h-2.5 w-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]" />
+              <span className="font-medium text-xs">Target Missile</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="h-2 w-5 rounded bg-amber-500/70" />
-              <span className="text-[11px] text-slate-400">Slant Range LOS</span>
+              <span className="h-2 w-5 rounded bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+              <span className="text-[11px] text-cyan-300 font-mono font-bold">Ballistic Flight Arc</span>
             </div>
           </div>
 

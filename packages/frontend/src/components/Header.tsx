@@ -24,6 +24,7 @@ interface HeaderProps {
   backendConnected: boolean;
   onOpenPresets: () => void;
   onOpenCodeExport: () => void;
+  onOpenGuide: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -34,6 +35,7 @@ export const Header: React.FC<HeaderProps> = ({
   backendConnected,
   onOpenPresets,
   onOpenCodeExport,
+  onOpenGuide,
 }) => {
   const domains: {
     id: StudioTab;
@@ -144,6 +146,15 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Code2 className="w-3.5 h-3.5 text-cyan-400" />
           <span>Export as Code</span>
+        </button>
+
+        {/* Quick Tour / Interface Guide Trigger */}
+        <button
+          onClick={onOpenGuide}
+          className="flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700/80 px-3 py-1.5 text-xs font-semibold transition shadow-sm"
+        >
+          <HelpCircle className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="hidden sm:inline">Quick Tour</span>
         </button>
 
         {/* Preset Templates Trigger */}
