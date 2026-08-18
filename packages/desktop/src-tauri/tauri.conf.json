@@ -1,12 +1,12 @@
 {
   "productName": "Coform",
   "version": "0.1.0",
-  "identifier": "com.coform.app",
+  "identifier": "com.coform.desktop",
   "build": {
     "frontendDist": "../../frontend/dist",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "npm run dev --workspace=packages/frontend",
-    "beforeBuildCommand": "npm run build:frontend"
+    "beforeDevCommand": "npm run dev:frontend --prefix=../..",
+    "beforeBuildCommand": "npm run build:frontend --prefix=../.."
   },
   "app": {
     "windows": [

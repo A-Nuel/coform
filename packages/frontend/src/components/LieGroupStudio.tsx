@@ -21,7 +21,9 @@ import {
   ShieldCheck,
   Layers,
   ArrowRight,
+  Sliders,
 } from "lucide-react";
+import { MathText } from "./MathText";
 
 interface LieGroupStudioProps {
   experienceLevel: ExperienceLevel;
@@ -354,7 +356,9 @@ export const LieGroupStudio: React.FC<LieGroupStudioProps> = ({ experienceLevel 
         <div className="w-full max-w-xl grid grid-cols-2 md:grid-cols-3 gap-3">
           <div className="hud-panel rounded-xl p-3 shadow-lg border-emerald-500/30">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 uppercase font-mono font-semibold">Determinant $\det(R)$</span>
+              <span className="text-[10px] text-slate-400 uppercase font-mono font-semibold">
+                Determinant <MathText math="\det(R)" />
+              </span>
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             </div>
             <div className="text-lg font-black text-emerald-400 font-mono tracking-tight mt-0.5">
@@ -365,7 +369,9 @@ export const LieGroupStudio: React.FC<LieGroupStudioProps> = ({ experienceLevel 
 
           <div className="hud-panel rounded-xl p-3 shadow-lg border-indigo-500/30">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 uppercase font-mono font-semibold">Rotation Angle $\theta$</span>
+              <span className="text-[10px] text-slate-400 uppercase font-mono font-semibold">
+                Rotation Angle <MathText math="\theta" />
+              </span>
               <Rotate3d className="w-3.5 h-3.5 text-indigo-400" />
             </div>
             <div className="text-lg font-black text-indigo-400 font-mono tracking-tight mt-0.5">
@@ -376,13 +382,17 @@ export const LieGroupStudio: React.FC<LieGroupStudioProps> = ({ experienceLevel 
 
           <div className="hud-panel rounded-xl p-3 shadow-lg border-cyan-500/30 hidden md:block">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 uppercase font-mono font-semibold">Matrix Trace Tr(R)</span>
+              <span className="text-[10px] text-slate-400 uppercase font-mono font-semibold">
+                Matrix Trace <MathText math="\text{Tr}(R)" />
+              </span>
               <Layers className="w-3.5 h-3.5 text-cyan-400" />
             </div>
             <div className="text-lg font-black text-cyan-400 font-mono tracking-tight mt-0.5">
               {trace.toFixed(4)}
             </div>
-            <div className="text-[10px] text-slate-500 font-mono">1 + 2*cos(θ)</div>
+            <div className="text-[10px] text-slate-500 font-mono">
+              <MathText math="1 + 2\cos(\theta)" />
+            </div>
           </div>
         </div>
 
@@ -422,7 +432,7 @@ export const LieGroupStudio: React.FC<LieGroupStudioProps> = ({ experienceLevel 
               SO(3) Orthogonal Rotation Matrix
             </span>
             <span className="text-[10px] font-mono text-indigo-400">
-              {"R^T R = I_3x3"}
+              <MathText math="R^T R = I_{3\times3}" />
             </span>
           </div>
 

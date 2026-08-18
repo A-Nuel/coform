@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Zap,
 } from "lucide-react";
+import { MathText } from "./MathText";
 
 interface AppIntroModalProps {
   isOpen: boolean;
@@ -59,9 +60,9 @@ export const AppIntroModal: React.FC<AppIntroModalProps> = ({
                 <Rocket className="w-4 h-4" />
                 <span>Aerospace Radar</span>
               </div>
-              <p className="text-[11px] text-slate-400">
-                WGS-84 GPS $\leftrightarrow$ ECEF $\leftrightarrow$ Topocentric NED radar conversions with 3D missile ballistic trajectories.
-              </p>
+              <div className="text-[11px] text-slate-400">
+                <MathText math="\text{WGS-84} \longleftrightarrow \text{ECEF} \longleftrightarrow \text{NED}" /> radar conversions with 3D missile ballistic trajectories.
+              </div>
             </div>
 
             <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-3 space-y-1.5">
@@ -132,7 +133,7 @@ export const AppIntroModal: React.FC<AppIntroModalProps> = ({
             Transformations are applied sequentially from top to bottom. Coform automatically concatenates them into a single homogeneous composite matrix:
           </p>
           <div className="rounded-xl bg-slate-950 p-3.5 border border-slate-800 font-mono text-xs text-center text-cyan-300 font-bold">
-            {"M_composite = M_n · M_{n-1} ··· M_1"}
+            <MathText math="M_{\text{composite}} = M_n \cdot M_{n-1} \cdots M_1" display={true} />
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2 bg-slate-900/80 p-2 rounded-lg border border-slate-800">

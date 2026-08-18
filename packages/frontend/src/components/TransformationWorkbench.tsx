@@ -30,6 +30,7 @@ import {
   Grid as GridIcon,
   Edit3,
 } from "lucide-react";
+import { MathText } from "./MathText";
 import type { PipelineAction } from "./CodeExportModal";
 
 interface TransformationWorkbenchProps {
@@ -121,12 +122,17 @@ const PRIMITIVES_3D: Record<string, { name: string; points: number[][] }> = {
   },
 };
 
+export type LengthUnit = "mm" | "m" | "in";
+
 export const TransformationWorkbench: React.FC<TransformationWorkbenchProps> = ({
   experienceLevel,
   onOpenCodeExport,
 }) => {
   // Dimension state: 2D or 3D
   const [dim, setDim] = useState<2 | 3>(2);
+
+  // Industry Standard Unit System: mm (Default CAD / Robotics standard), m, in
+  const [unit, setUnit] = useState<LengthUnit>("mm");
 
   // Input Points state
   const [points, setPoints] = useState<number[][]>(PRIMITIVES_2D.square.points);
@@ -483,28 +489,49 @@ export const TransformationWorkbench: React.FC<TransformationWorkbenchProps> = (
             </div>
           </div>
 
-          {/* 2D / 3D Toggle */}
-          <div className="flex items-center rounded-xl bg-slate-950 p-1 border border-slate-800 text-xs">
-            <button
-              onClick={() => handleDimChange(2)}
-              className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition ${
-                dim === 2
-                  ? "bg-cyan-600 text-white shadow-sm"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              2D Space
-            </button>
-            <button
-              onClick={() => handleDimChange(3)}
-              className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition ${
-                dim === 3
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              3D Space
-            </button>
+          {/* 2D / 3D & Unit System Controls */}
+          <div className="flex items-center gap-1.5">
+            {/* Unit Selector */}
+            <div className="flex items-center rounded-xl bg-slate-950 p-0.5 border border-slate-800 text-[10px]">
+              {(["mm", "m", "in"] as LengthUnit[]).map((u) => (
+                <button
+                  key={u}
+                  onClick={() => setUnit(u)}
+                  className={`px-2 py-0.5 rounded-lg font-mono font-bold transition ${
+                    unit === u
+                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                      : "text-slate-500 hover:text-slate-300"
+                  }`}
+                  title={`Measurement Unit: ${u === "mm" ? "Millimeters (CAD Standard)" : u === "m" ? "Meters" : "Inches"}`}
+                >
+                  {u}
+                </button>
+              ))}
+            </div>
+
+            {/* 2D / 3D Toggle */}
+            <div className="flex items-center rounded-xl bg-slate-950 p-0.5 border border-slate-800 text-xs">
+              <button
+                onClick={() => handleDimChange(2)}
+                className={`px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold transition ${
+                  dim === 2
+                    ? "bg-cyan-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                2D
+              </button>
+              <button
+                onClick={() => handleDimChange(3)}
+                className={`px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold transition ${
+                  dim === 3
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                3D
+              </button>
+            </div>
           </div>
         </div>
 
@@ -513,7 +540,7 @@ export const TransformationWorkbench: React.FC<TransformationWorkbenchProps> = (
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
               <Edit3 className="w-3.5 h-3.5" />
-              <span>Input Coordinates (Type / Edit)</span>
+              <span>Input Coordinates ({unit})</span>
             </span>
             <button
               onClick={addCustomPoint}
@@ -920,7 +947,9 @@ export const TransformationWorkbench: React.FC<TransformationWorkbenchProps> = (
             <div className="text-lg font-black text-indigo-400 font-mono tracking-tight mt-0.5">
               {actions.filter((a) => a.enabled).length} Actions Composed
             </div>
-            <div className="text-[10px] text-slate-400 font-mono mt-0.5">Matrix Cascade $M_k \cdots M_1$</div>
+            <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+              <MathText math="M_{\text{composite}} = M_k \cdots M_1" />
+            </div>
           </div>
 
           <div className="hud-panel rounded-xl p-3 shadow-lg pointer-events-auto border-emerald-500/30 hidden md:block">
@@ -937,9 +966,11 @@ export const TransformationWorkbench: React.FC<TransformationWorkbenchProps> = (
                   return Math.sqrt(dx * dx + dy * dy + dz * dz);
                 })
               ).toFixed(2)}{" "}
-              <span className="text-xs font-normal text-emerald-400/70">units</span>
+              <span className="text-xs font-normal text-emerald-400/70">{unit}</span>
             </div>
-            <div className="text-[10px] text-slate-400 font-mono mt-0.5">Delta $\|P_i' - P_i\|$</div>
+            <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+              Delta <MathText math="\|P_i' - P_i\|" /> ({unit})
+            </div>
           </div>
         </div>
 
@@ -1114,9 +1145,9 @@ export const TransformationWorkbench: React.FC<TransformationWorkbenchProps> = (
             <thead>
               <tr className="border-b border-slate-800 bg-slate-900/90 text-slate-400">
                 <th className="p-2 text-left">#</th>
-                <th className="p-2 text-left">Original</th>
-                <th className="p-2 text-left text-cyan-400">Resultant P'</th>
-                <th className="p-2 text-left text-amber-400">Δ Dist</th>
+                <th className="p-2 text-left">Original ({unit})</th>
+                <th className="p-2 text-left text-cyan-400">Resultant P' ({unit})</th>
+                <th className="p-2 text-left text-amber-400">Δ ({unit})</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
@@ -1150,7 +1181,9 @@ export const TransformationWorkbench: React.FC<TransformationWorkbenchProps> = (
             <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-400">
               Composite Matrix ({dim + 1}x{dim + 1})
             </span>
-            <span className="text-[10px] font-mono text-cyan-400">M = M_k ... M_1</span>
+            <span className="text-[10px] font-mono text-cyan-400">
+              <MathText math="M = M_k \cdots M_1" />
+            </span>
           </div>
 
           <div

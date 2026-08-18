@@ -12,6 +12,8 @@
   "scripts": {
     "dev:frontend": "npm run dev --workspace=packages/frontend",
     "build:frontend": "npm run build --workspace=packages/frontend",
+    "dev:desktop": "npm run dev --workspace=packages/desktop",
+    "build:desktop": "npm run build --workspace=packages/desktop",
     "dev:core": "npm run build --workspace=packages/core -- --watch",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"

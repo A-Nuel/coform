@@ -24,6 +24,7 @@ import {
   Flame,
   Activity,
 } from "lucide-react";
+import { MathText } from "./MathText";
 
 interface AerospaceStudioProps {
   experienceLevel: ExperienceLevel;
@@ -222,9 +223,11 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
                 Aerospace & Radar
               </h2>
             </div>
-            <p className="text-[11px] text-slate-400">
-              WGS-84 Geodetic $\leftrightarrow$ ECEF $\leftrightarrow$ Topocentric NED Radar
-            </p>
+            <div className="text-[11px] text-slate-400 flex items-center gap-1">
+              <span>Geodetic</span>
+              <MathText math="\text{WGS-84} \longleftrightarrow \text{ECEF} \longleftrightarrow \text{NED}" />
+              <span>Radar</span>
+            </div>
           </div>
           <span className="rounded-md bg-amber-950/60 px-2 py-0.5 text-[10px] font-mono font-medium text-amber-400 border border-amber-800/50">
             WGS-84 ELLIPSOID
@@ -409,7 +412,11 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
           <div className="space-y-2">
             <div>
               <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
-                <span>Heading / Yaw ($\psi$)</span>
+                <span className="flex items-center gap-1">
+                  <span>Heading / Yaw (</span>
+                  <MathText math="\psi" />
+                  <span>)</span>
+                </span>
                 <input
                   type="number"
                   value={yawDeg}
@@ -429,7 +436,11 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
 
             <div>
               <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
-                <span>Pitch Elevation ($\theta$)</span>
+                <span className="flex items-center gap-1">
+                  <span>Pitch Elevation (</span>
+                  <MathText math="\theta" />
+                  <span>)</span>
+                </span>
                 <input
                   type="number"
                   value={pitchDeg}
@@ -449,7 +460,11 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
 
             <div>
               <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
-                <span>Bank / Roll ($\phi$)</span>
+                <span className="flex items-center gap-1">
+                  <span>Bank / Roll (</span>
+                  <MathText math="\phi" />
+                  <span>)</span>
+                </span>
                 <input
                   type="number"
                   value={rollDeg}

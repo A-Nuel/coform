@@ -14,7 +14,9 @@ import {
   Maximize2,
   Copy,
   Check,
+  ChevronRight,
 } from "lucide-react";
+import { MathText } from "./MathText";
 
 interface RoboticsStudioProps {
   experienceLevel: ExperienceLevel;
@@ -55,6 +57,7 @@ const ROBOT_PRESETS: { name: string; description: string; links: DHLink[] }[] = 
 
 export const RoboticsStudio: React.FC<RoboticsStudioProps> = ({ experienceLevel }) => {
   const [links, setLinks] = useState<DHLink[]>(ROBOT_PRESETS[0].links);
+  const [robotUnit, setRobotUnit] = useState<"mm" | "m">("mm");
   const [copied, setCopied] = useState(false);
 
   const updateLink = (id: string, key: keyof DHLink, val: number) => {
@@ -162,12 +165,31 @@ export const RoboticsStudio: React.FC<RoboticsStudioProps> = ({ experienceLevel 
               </h2>
             </div>
             <p className="text-[11px] text-slate-400">
-              Denavit-Hartenberg Forward Kinematics Chain & $T_0^n$ Pose
+              Denavit-Hartenberg Forward Kinematics Chain & <MathText math="T_0^n" /> Pose
             </p>
           </div>
-          <span className="rounded-md bg-cyan-950/60 px-2 py-0.5 text-[10px] font-mono font-medium text-cyan-400 border border-cyan-800/50">
-            {links.length} DOF CHAIN
-          </span>
+
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center rounded-xl bg-slate-950 p-0.5 border border-slate-800 text-[10px]">
+              {(["mm", "m"] as const).map((u) => (
+                <button
+                  key={u}
+                  onClick={() => setRobotUnit(u)}
+                  className={`px-2 py-0.5 rounded-lg font-mono font-bold transition ${
+                    robotUnit === u
+                      ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                      : "text-slate-500 hover:text-slate-300"
+                  }`}
+                  title={`Unit: ${u === "mm" ? "Millimeters" : "Meters"}`}
+                >
+                  {u}
+                </button>
+              ))}
+            </div>
+            <span className="rounded-md bg-cyan-950/60 px-2 py-0.5 text-[10px] font-mono font-medium text-cyan-400 border border-cyan-800/50">
+              {links.length} DOF CHAIN
+            </span>
+          </div>
         </div>
 
         {experienceLevel === "beginner" && (
@@ -263,7 +285,10 @@ export const RoboticsStudio: React.FC<RoboticsStudioProps> = ({ experienceLevel 
                   {/* Joint Angle Slider */}
                   <div>
                     <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1">
-                      <span>Joint Angle θ_{idx + 1}</span>
+                      <span className="flex items-center gap-1">
+                        <span>Joint Angle</span>
+                        <MathText math={`\\theta_{${idx + 1}}`} />
+                      </span>
                       <input
                         type="number"
                         min={-180}
@@ -287,7 +312,11 @@ export const RoboticsStudio: React.FC<RoboticsStudioProps> = ({ experienceLevel 
                   {experienceLevel === "expert" && (
                     <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-800/40 text-[10px]">
                       <div>
-                        <label className="block text-slate-400 mb-0.5">Link $a$ (m)</label>
+                        <label className="block text-slate-400 mb-0.5 flex items-center gap-0.5">
+                          <span>Link</span>
+                          <MathText math="a" />
+                          <span>(m)</span>
+                        </label>
                         <input
                           type="number"
                           step="0.05"
@@ -297,7 +326,11 @@ export const RoboticsStudio: React.FC<RoboticsStudioProps> = ({ experienceLevel 
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-400 mb-0.5">Twist $\alpha$ (°)</label>
+                        <label className="block text-slate-400 mb-0.5 flex items-center gap-0.5">
+                          <span>Twist</span>
+                          <MathText math="\alpha" />
+                          <span>(°)</span>
+                        </label>
                         <input
                           type="number"
                           step="15"
@@ -307,7 +340,11 @@ export const RoboticsStudio: React.FC<RoboticsStudioProps> = ({ experienceLevel 
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-400 mb-0.5">Offset $d$ (m)</label>
+                        <label className="block text-slate-400 mb-0.5 flex items-center gap-0.5">
+                          <span>Offset</span>
+                          <MathText math="d" />
+                          <span>(m)</span>
+                        </label>
                         <input
                           type="number"
                           step="0.05"
@@ -344,9 +381,11 @@ export const RoboticsStudio: React.FC<RoboticsStudioProps> = ({ experienceLevel 
               <Bot className="w-3 h-3 text-cyan-400" />
             </div>
             <div className="text-lg font-black text-cyan-400 font-mono tracking-tight mt-0.5">
-              [{endEffectorMat[0][3].toFixed(3)}, {endEffectorMat[1][3].toFixed(3)}, {endEffectorMat[2][3].toFixed(3)}] <span className="text-xs font-normal text-cyan-400/70">m</span>
+              [{(endEffectorMat[0][3] * (robotUnit === "mm" ? 1000 : 1)).toFixed(1)}, {(endEffectorMat[1][3] * (robotUnit === "mm" ? 1000 : 1)).toFixed(1)}, {(endEffectorMat[2][3] * (robotUnit === "mm" ? 1000 : 1)).toFixed(1)}] <span className="text-xs font-normal text-cyan-400/70">{robotUnit}</span>
             </div>
-            <div className="text-[10px] text-slate-400 font-mono mt-0.5">Base Coordinate Frame $T_0$</div>
+            <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+              Base Coordinate Frame <MathText math="T_0" />
+            </div>
           </div>
 
           <div className="hud-panel rounded-xl p-3 shadow-lg pointer-events-auto border-indigo-500/30">
@@ -366,11 +405,11 @@ export const RoboticsStudio: React.FC<RoboticsStudioProps> = ({ experienceLevel 
               <Maximize2 className="w-3 h-3 text-emerald-400" />
             </div>
             <div className="text-lg font-black text-emerald-400 font-mono tracking-tight mt-0.5">
-              {Math.sqrt(
+              {(Math.sqrt(
                 endEffectorMat[0][3] ** 2 + endEffectorMat[1][3] ** 2 + endEffectorMat[2][3] ** 2
-              ).toFixed(3)} <span className="text-xs font-normal text-emerald-400/70">m</span>
+              ) * (robotUnit === "mm" ? 1000 : 1)).toFixed(1)} <span className="text-xs font-normal text-emerald-400/70">{robotUnit}</span>
             </div>
-            <div className="text-[10px] text-slate-400 font-mono mt-0.5">Total Vector Span</div>
+            <div className="text-[10px] text-slate-400 font-mono mt-0.5">Total Vector Span ({robotUnit})</div>
           </div>
         </div>
 
