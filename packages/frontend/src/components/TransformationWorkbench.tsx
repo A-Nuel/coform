@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Grid, GizmoHelper, GizmoViewport, Line } from "@react-three/drei";
 import type { ExperienceLevel, Mat3, Mat4 } from "@coform/core";
+import { CustomGLBModel } from "./CustomGLBModel";
 import {
   identity3,
   identity4,
@@ -136,6 +137,9 @@ export const TransformationWorkbench: React.FC<TransformationWorkbenchProps> = (
 
   // Input Points state
   const [points, setPoints] = useState<number[][]>(PRIMITIVES_2D.square.points);
+
+  // 3D View Mode: "cad" (CAD Part GLB) vs "points" (Point Cloud Primitives)
+  const [view3DMode, setView3DMode] = useState<"cad" | "points">("cad");
 
   // Transformation Action Pipeline
   const [actions, setActions] = useState<PipelineAction[]>([
@@ -532,6 +536,34 @@ export const TransformationWorkbench: React.FC<TransformationWorkbenchProps> = (
                 3D
               </button>
             </div>
+
+            {/* 3D Mode Selector Pills (CAD Part vs Point Cloud) */}
+            {dim === 3 && (
+              <div className="flex items-center rounded-xl bg-slate-950 p-0.5 border border-slate-800 text-[10px]">
+                <button
+                  onClick={() => setView3DMode("cad")}
+                  className={`px-2 py-0.5 rounded-lg font-mono font-bold transition ${
+                    view3DMode === "cad"
+                      ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                      : "text-slate-500 hover:text-slate-300"
+                  }`}
+                  title="3D Mechanical CAD Component"
+                >
+                  CAD (GLB)
+                </button>
+                <button
+                  onClick={() => setView3DMode("points")}
+                  className={`px-2 py-0.5 rounded-lg font-mono font-bold transition ${
+                    view3DMode === "points"
+                      ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/40"
+                      : "text-slate-500 hover:text-slate-300"
+                  }`}
+                  title="3D Point Cloud & Primitives"
+                >
+                  Points
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1063,36 +1095,52 @@ export const TransformationWorkbench: React.FC<TransformationWorkbenchProps> = (
 
                 <Grid infiniteGrid fadeDistance={15} sectionSize={2} sectionColor="#334155" cellColor="#0f172a" cellSize={0.5} />
 
-                {/* Render Original 3D Vertices (Ghost) */}
-                {points.map((p, i) => (
-                  <mesh key={`3d-orig-${i}`} position={[p[0], p[1], p[2] ?? 0]}>
-                    <sphereGeometry args={[0.08, 16, 16]} />
-                    <meshStandardMaterial color="#64748b" transparent opacity={0.5} />
-                  </mesh>
-                ))}
+                {view3DMode === "cad" ? (
+                  <>
+                    {/* Ghost Original Mechanical CAD Component */}
+                    <Suspense fallback={null}>
+                      <CustomGLBModel url="/models/cad_part.glb" scale={0.7} ghost opacity={0.35} />
+                    </Suspense>
 
-                {/* Render Transformed 3D Vertices (Luminous) */}
-                {transformedPoints.map((p, i) => (
-                  <mesh key={`3d-trans-${i}`} position={[p[0], p[1], p[2]]}>
-                    <sphereGeometry args={[0.1, 16, 16]} />
-                    <meshStandardMaterial color="#06b6d4" emissive="#0891b2" emissiveIntensity={0.8} />
-                  </mesh>
-                ))}
+                    {/* Resultant Transformed Mechanical CAD Component */}
+                    <Suspense fallback={null}>
+                      <CustomGLBModel url="/models/cad_part.glb" scale={0.7} matrix4x4={compositeMatrix} />
+                    </Suspense>
+                  </>
+                ) : (
+                  <>
+                    {/* Render Original 3D Vertices (Ghost) */}
+                    {points.map((p, i) => (
+                      <mesh key={`3d-orig-${i}`} position={[p[0], p[1], p[2] ?? 0]}>
+                        <sphereGeometry args={[0.08, 16, 16]} />
+                        <meshStandardMaterial color="#64748b" transparent opacity={0.5} />
+                      </mesh>
+                    ))}
 
-                {/* Displacement Trails */}
-                {points.map((p, i) => (
-                  <Line
-                    key={`3d-line-${i}`}
-                    points={[
-                      [p[0], p[1], p[2] ?? 0],
-                      [transformedPoints[i][0], transformedPoints[i][1], transformedPoints[i][2]],
-                    ]}
-                    color="#f59e0b"
-                    lineWidth={1.5}
-                    dashed
-                    dashScale={3}
-                  />
-                ))}
+                    {/* Render Transformed 3D Vertices (Luminous) */}
+                    {transformedPoints.map((p, i) => (
+                      <mesh key={`3d-trans-${i}`} position={[p[0], p[1], p[2]]}>
+                        <sphereGeometry args={[0.1, 16, 16]} />
+                        <meshStandardMaterial color="#06b6d4" emissive="#0891b2" emissiveIntensity={0.8} />
+                      </mesh>
+                    ))}
+
+                    {/* Displacement Trails */}
+                    {points.map((p, i) => (
+                      <Line
+                        key={`3d-line-${i}`}
+                        points={[
+                          [p[0], p[1], p[2] ?? 0],
+                          [transformedPoints[i][0], transformedPoints[i][1], transformedPoints[i][2]],
+                        ]}
+                        color="#f59e0b"
+                        lineWidth={1.5}
+                        dashed
+                        dashScale={3}
+                      />
+                    ))}
+                  </>
+                )}
 
                 <OrbitControls makeDefault enableDamping dampingFactor={0.05} />
                 <GizmoHelper alignment="bottom-right" margin={[80, 80]}>

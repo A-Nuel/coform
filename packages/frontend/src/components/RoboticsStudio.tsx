@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Grid, GizmoHelper, GizmoViewport, Line } from "@react-three/drei";
 import * as THREE from "three";
 import { dhToMatrix, degToRad, radToDeg } from "@coform/core";
 import type { DHLink, ExperienceLevel } from "@coform/core";
+import { CustomGLBModel } from "./CustomGLBModel";
 import {
   Bot,
   Plus,
@@ -214,6 +215,7 @@ const IndustrialGripperTool: React.FC<{
 export const RoboticsStudio: React.FC<RoboticsStudioProps> = ({ experienceLevel }) => {
   const [links, setLinks] = useState<DHLink[]>(ROBOT_PRESETS[0].links);
   const [robotUnit, setRobotUnit] = useState<"mm" | "m">("mm");
+  const [robotVizMode, setRobotVizMode] = useState<"glb_arm" | "procedural_fk">("glb_arm");
   const [copied, setCopied] = useState(false);
 
   const updateLink = (id: string, key: keyof DHLink, val: number) => {
@@ -326,6 +328,7 @@ export const RoboticsStudio: React.FC<RoboticsStudioProps> = ({ experienceLevel 
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* Unit Selector */}
             <div className="flex items-center rounded-xl bg-slate-950 p-0.5 border border-slate-800 text-[10px]">
               {(["mm", "m"] as const).map((u) => (
                 <button
@@ -342,8 +345,35 @@ export const RoboticsStudio: React.FC<RoboticsStudioProps> = ({ experienceLevel 
                 </button>
               ))}
             </div>
+
+            {/* 3D Model Selector Pills */}
+            <div className="flex items-center rounded-xl bg-slate-950 p-0.5 border border-slate-800 text-[10px]">
+              <button
+                onClick={() => setRobotVizMode("glb_arm")}
+                className={`px-2 py-0.5 rounded-lg font-mono font-bold transition ${
+                  robotVizMode === "glb_arm"
+                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+                title="3D Industrial Robot Arm GLB Model"
+              >
+                Arm (GLB)
+              </button>
+              <button
+                onClick={() => setRobotVizMode("procedural_fk")}
+                className={`px-2 py-0.5 rounded-lg font-mono font-bold transition ${
+                  robotVizMode === "procedural_fk"
+                    ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/40"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+                title="Articulated Forward Kinematics Chain"
+              >
+                FK Chain
+              </button>
+            </div>
+
             <span className="rounded-md bg-cyan-950/60 px-2 py-0.5 text-[10px] font-mono font-medium text-cyan-400 border border-cyan-800/50">
-              {links.length} DOF CHAIN
+              {links.length} DOF
             </span>
           </div>
         </div>
@@ -586,57 +616,90 @@ export const RoboticsStudio: React.FC<RoboticsStudioProps> = ({ experienceLevel 
               cellSize={0.2}
             />
 
-            {/* Heavy-Duty Cast Industrial Robot Base Plinth */}
-            <group position={[0, 0, 0]}>
-              {/* Floor Mounting Flange Base */}
-              <mesh position={[0, 0.04, 0]}>
-                <cylinderGeometry args={[0.26, 0.3, 0.08, 32]} />
-                <meshStandardMaterial color="#1e293b" metalness={0.9} roughness={0.2} />
-              </mesh>
+            {robotVizMode === "glb_arm" ? (
+              <group position={[0, 0, 0]}>
+                {/* 3D High-Fidelity Industrial Robot Arm GLB Model */}
+                <Suspense
+                  fallback={
+                    <group position={[0, 0, 0]}>
+                      {jointPositions.map((pos, i) => {
+                        const nextPos = jointPositions[i + 1];
+                        if (!nextPos) return null;
+                        return (
+                          <IndustrialLinkSegment
+                            key={`fb-link-${i}`}
+                            start={pos}
+                            end={nextPos}
+                            isLast={i === jointPositions.length - 2}
+                          />
+                        );
+                      })}
+                    </group>
+                  }
+                >
+                  <CustomGLBModel url="/models/robot_arm.glb" scale={2.2} position={[0, 0, 0]} />
+                </Suspense>
 
-              {/* Rotary Turntable Hub Ring */}
-              <mesh position={[0, 0.09, 0]}>
-                <cylinderGeometry args={[0.22, 0.22, 0.04, 32]} />
-                <meshStandardMaterial color="#0284c7" metalness={0.8} roughness={0.25} />
-              </mesh>
+                {/* 3D Industrial Gripper End-Effector Tool Model */}
+                <Suspense fallback={null}>
+                  <CustomGLBModel url="/models/gripper.glb" scale={0.6} position={endEffectorPos} />
+                </Suspense>
+              </group>
+            ) : (
+              <>
+                {/* Heavy-Duty Cast Industrial Robot Base Plinth */}
+                <group position={[0, 0, 0]}>
+                  {/* Floor Mounting Flange Base */}
+                  <mesh position={[0, 0.04, 0]}>
+                    <cylinderGeometry args={[0.26, 0.3, 0.08, 32]} />
+                    <meshStandardMaterial color="#1e293b" metalness={0.9} roughness={0.2} />
+                  </mesh>
 
-              {/* Glowing Turntable Bezel LED */}
-              <mesh position={[0, 0.11, 0]}>
-                <torusGeometry args={[0.21, 0.006, 16, 32]} />
-                <meshStandardMaterial color="#38bdf8" emissive="#06b6d4" emissiveIntensity={1.8} />
-              </mesh>
-            </group>
+                  {/* Rotary Turntable Hub Ring */}
+                  <mesh position={[0, 0.09, 0]}>
+                    <cylinderGeometry args={[0.22, 0.22, 0.04, 32]} />
+                    <meshStandardMaterial color="#0284c7" metalness={0.8} roughness={0.25} />
+                  </mesh>
 
-            {/* Render High-Fidelity Machined Link Limbs */}
-            {jointPositions.map((pos, i) => {
-              const nextPos = jointPositions[i + 1];
-              if (!nextPos) return null;
-              return (
-                <IndustrialLinkSegment
-                  key={`link-seg-${i}`}
-                  start={pos}
-                  end={nextPos}
-                  isLast={i === jointPositions.length - 2}
-                />
-              );
-            })}
+                  {/* Glowing Turntable Bezel LED */}
+                  <mesh position={[0, 0.11, 0]}>
+                    <torusGeometry args={[0.21, 0.006, 16, 32]} />
+                    <meshStandardMaterial color="#38bdf8" emissive="#06b6d4" emissiveIntensity={1.8} />
+                  </mesh>
+                </group>
 
-            {/* Render Revolute Joint Servo Motors */}
-            {jointPositions.map((pos, i) => {
-              const isLast = i === jointPositions.length - 1;
-              if (isLast) return null; // End-effector is rendered separately
-              return (
-                <IndustrialJointActuator
-                  key={`servo-joint-${i}`}
-                  pos={pos}
-                  isFirst={i === 0}
-                  isEnd={i === jointPositions.length - 2}
-                />
-              );
-            })}
+                {/* Render High-Fidelity Machined Link Limbs */}
+                {jointPositions.map((pos, i) => {
+                  const nextPos = jointPositions[i + 1];
+                  if (!nextPos) return null;
+                  return (
+                    <IndustrialLinkSegment
+                      key={`link-seg-${i}`}
+                      start={pos}
+                      end={nextPos}
+                      isLast={i === jointPositions.length - 2}
+                    />
+                  );
+                })}
 
-            {/* Render Industrial 2-Finger Parallel Gripper Tool at TCP */}
-            <IndustrialGripperTool pos={endEffectorPos} />
+                {/* Render Revolute Joint Servo Motors */}
+                {jointPositions.map((pos, i) => {
+                  const isLast = i === jointPositions.length - 1;
+                  if (isLast) return null; // End-effector is rendered separately
+                  return (
+                    <IndustrialJointActuator
+                      key={`servo-joint-${i}`}
+                      pos={pos}
+                      isFirst={i === 0}
+                      isEnd={i === jointPositions.length - 2}
+                    />
+                  );
+                })}
+
+                {/* Render Industrial 2-Finger Parallel Gripper Tool at TCP */}
+                <IndustrialGripperTool pos={endEffectorPos} />
+              </>
+            )}
 
             <OrbitControls makeDefault enableDamping dampingFactor={0.05} />
             <GizmoHelper alignment="bottom-right" margin={[80, 80]}>

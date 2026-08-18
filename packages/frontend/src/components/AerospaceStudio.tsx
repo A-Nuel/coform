@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Grid, GizmoHelper, GizmoViewport, Line } from "@react-three/drei";
 import type { ExperienceLevel } from "@coform/core";
+import { CustomGLBModel } from "./CustomGLBModel";
 import {
   geodeticToECEF,
   ecefToNED,
@@ -117,6 +118,9 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
   const [pitchDeg, setPitchDeg] = useState(58);
   const [rollDeg, setRollDeg] = useState(5);
 
+  // 3D Model Selector (missile.glb, aircraft.glb, procedural)
+  const [activeModel, setActiveModel] = useState<"missile" | "aircraft" | "procedural">("missile");
+
   const [copied, setCopied] = useState(false);
 
   // Computations
@@ -229,9 +233,43 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
               <span>Radar</span>
             </div>
           </div>
-          <span className="rounded-md bg-amber-950/60 px-2 py-0.5 text-[10px] font-mono font-medium text-amber-400 border border-amber-800/50">
-            WGS-84 ELLIPSOID
-          </span>
+          
+          {/* 3D Model Selector Pills */}
+          <div className="flex items-center rounded-xl bg-slate-950 p-0.5 border border-slate-800 text-[10px]">
+            <button
+              onClick={() => setActiveModel("missile")}
+              className={`px-2 py-0.5 rounded-lg font-mono font-bold transition ${
+                activeModel === "missile"
+                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                  : "text-slate-500 hover:text-slate-300"
+              }`}
+              title="3D Missile GLB Model"
+            >
+              Missile (GLB)
+            </button>
+            <button
+              onClick={() => setActiveModel("aircraft")}
+              className={`px-2 py-0.5 rounded-lg font-mono font-bold transition ${
+                activeModel === "aircraft"
+                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                  : "text-slate-500 hover:text-slate-300"
+              }`}
+              title="3D Stealth Jet GLB Model"
+            >
+              Aircraft (GLB)
+            </button>
+            <button
+              onClick={() => setActiveModel("procedural")}
+              className={`px-2 py-0.5 rounded-lg font-mono font-bold transition ${
+                activeModel === "procedural"
+                  ? "bg-slate-700/40 text-slate-200 border border-slate-600"
+                  : "text-slate-500 hover:text-slate-300"
+              }`}
+              title="Procedural Mesh"
+            >
+              CAD Mesh
+            </button>
+          </div>
         </div>
 
         {/* Realistic Missile Trajectory Presets */}
@@ -612,17 +650,54 @@ export const AerospaceStudio: React.FC<AerospaceStudioProps> = ({ experienceLeve
               </mesh>
             ))}
 
-            {/* Target Missile Body (Cone + Cylinder) */}
-            <group position={vizTarget} rotation={[degToRad(-pitchDeg), degToRad(-yawDeg), degToRad(rollDeg)]}>
-              <mesh position={[0, 0.6, 0]}>
-                <coneGeometry args={[0.4, 1.3, 32]} />
-                <meshStandardMaterial color="#f43f5e" emissive="#e11d48" emissiveIntensity={0.8} />
-              </mesh>
-              <mesh position={[0, -0.2, 0]}>
-                <cylinderGeometry args={[0.28, 0.28, 0.9, 32]} />
-                <meshStandardMaterial color="#0284c7" />
-              </mesh>
-            </group>
+            {/* Render Selected 3D Vehicle Model (GLB or Procedural) */}
+            {activeModel === "missile" && (
+              <Suspense
+                fallback={
+                  <group position={vizTarget} rotation={[degToRad(-pitchDeg), degToRad(-yawDeg), degToRad(rollDeg)]}>
+                    <mesh position={[0, 0.6, 0]}>
+                      <coneGeometry args={[0.4, 1.3, 32]} />
+                      <meshStandardMaterial color="#f43f5e" emissive="#e11d48" emissiveIntensity={0.8} />
+                    </mesh>
+                    <mesh position={[0, -0.2, 0]}>
+                      <cylinderGeometry args={[0.28, 0.28, 0.9, 32]} />
+                      <meshStandardMaterial color="#0284c7" />
+                    </mesh>
+                  </group>
+                }
+              >
+                <CustomGLBModel
+                  url="/models/missile.glb"
+                  scale={2.2}
+                  position={vizTarget}
+                  rotation={[degToRad(-pitchDeg), degToRad(-yawDeg), degToRad(rollDeg)]}
+                />
+              </Suspense>
+            )}
+
+            {activeModel === "aircraft" && (
+              <Suspense fallback={null}>
+                <CustomGLBModel
+                  url="/models/aircraft.glb"
+                  scale={2.0}
+                  position={vizTarget}
+                  rotation={[degToRad(-pitchDeg), degToRad(-yawDeg), degToRad(rollDeg)]}
+                />
+              </Suspense>
+            )}
+
+            {activeModel === "procedural" && (
+              <group position={vizTarget} rotation={[degToRad(-pitchDeg), degToRad(-yawDeg), degToRad(rollDeg)]}>
+                <mesh position={[0, 0.6, 0]}>
+                  <coneGeometry args={[0.4, 1.3, 32]} />
+                  <meshStandardMaterial color="#f43f5e" emissive="#e11d48" emissiveIntensity={0.8} />
+                </mesh>
+                <mesh position={[0, -0.2, 0]}>
+                  <cylinderGeometry args={[0.28, 0.28, 0.9, 32]} />
+                  <meshStandardMaterial color="#0284c7" />
+                </mesh>
+              </group>
+            )}
 
             <OrbitControls makeDefault enableDamping dampingFactor={0.05} />
             <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
