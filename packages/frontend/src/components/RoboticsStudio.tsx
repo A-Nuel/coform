@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Grid, GizmoHelper, GizmoViewport, Line } from "@react-three/drei";
+import * as THREE from "three";
 import { dhToMatrix, degToRad, radToDeg } from "@coform/core";
 import type { DHLink, ExperienceLevel } from "@coform/core";
 import {
@@ -54,6 +55,161 @@ const ROBOT_PRESETS: { name: string; description: string; links: DHLink[] }[] = 
     ],
   },
 ];
+
+// High-Fidelity 3D Industrial Robotic Arm Components
+const IndustrialLinkSegment: React.FC<{
+  start: [number, number, number];
+  end: [number, number, number];
+  isLast?: boolean;
+}> = ({ start, end, isLast = false }) => {
+  const p0 = useMemo(() => new THREE.Vector3(...start), [start]);
+  const p1 = useMemo(() => new THREE.Vector3(...end), [end]);
+  const dir = useMemo(() => new THREE.Vector3().subVectors(p1, p0), [p0, p1]);
+  const len = dir.length();
+  const mid = useMemo(() => new THREE.Vector3().addVectors(p0, p1).multiplyScalar(0.5), [p0, p1]);
+
+  const quat = useMemo(() => {
+    const q = new THREE.Quaternion();
+    if (len > 0.001) {
+      q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+    }
+    return q;
+  }, [dir, len]);
+
+  if (len < 0.01) return null;
+
+  return (
+    <group position={mid} quaternion={quat}>
+      {/* Main Machined Aircraft-Grade Aluminum Arm Chassis (Bright Luminous Silver) */}
+      <mesh>
+        <cylinderGeometry args={[0.042, 0.05, len * 0.92, 24]} />
+        <meshStandardMaterial
+          color={isLast ? "#38bdf8" : "#f1f5f9"}
+          metalness={0.75}
+          roughness={0.2}
+        />
+      </mesh>
+
+      {/* Cyber Neon Status Accent Stripe */}
+      <mesh position={[0.044, 0, 0]}>
+        <boxGeometry args={[0.008, len * 0.78, 0.015]} />
+        <meshStandardMaterial
+          color="#06b6d4"
+          emissive="#06b6d4"
+          emissiveIntensity={1.4}
+        />
+      </mesh>
+
+      {/* Lower Joint Collar Cuff */}
+      <mesh position={[0, -len * 0.44, 0]}>
+        <cylinderGeometry args={[0.056, 0.056, 0.038, 24]} />
+        <meshStandardMaterial color="#0284c7" metalness={0.8} roughness={0.25} />
+      </mesh>
+
+      {/* Upper Joint Collar Cuff */}
+      <mesh position={[0, len * 0.44, 0]}>
+        <cylinderGeometry args={[0.052, 0.052, 0.038, 24]} />
+        <meshStandardMaterial color="#0284c7" metalness={0.8} roughness={0.25} />
+      </mesh>
+    </group>
+  );
+};
+
+// Industrial Revolute Servo Actuator Motor Canister (High Contrast Metallic)
+const IndustrialJointActuator: React.FC<{
+  pos: [number, number, number];
+  isFirst?: boolean;
+  isEnd?: boolean;
+}> = ({ pos, isFirst = false, isEnd = false }) => {
+  return (
+    <group position={pos}>
+      {/* Heavy-Duty Motor Housing Drum (Cobalt Blue / Golden Amber) */}
+      <mesh rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.068, 0.068, 0.12, 28]} />
+        <meshStandardMaterial
+          color={isFirst ? "#f59e0b" : isEnd ? "#38bdf8" : "#0284c7"}
+          metalness={0.85}
+          roughness={0.25}
+        />
+      </mesh>
+
+      {/* Outer Joint Bezel End Caps */}
+      <mesh position={[0.062, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.058, 0.058, 0.018, 24]} />
+        <meshStandardMaterial color="#f8fafc" metalness={0.9} roughness={0.15} />
+      </mesh>
+      <mesh position={[-0.062, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.058, 0.058, 0.018, 24]} />
+        <meshStandardMaterial color="#f8fafc" metalness={0.9} roughness={0.15} />
+      </mesh>
+
+      {/* Glowing Status LED Torus Ring */}
+      <mesh rotation={[0, 0, Math.PI / 2]}>
+        <torusGeometry args={[0.072, 0.007, 16, 32]} />
+        <meshStandardMaterial
+          color={isFirst ? "#fbbf24" : "#22d3ee"}
+          emissive={isFirst ? "#f59e0b" : "#06b6d4"}
+          emissiveIntensity={1.8}
+        />
+      </mesh>
+    </group>
+  );
+};
+
+// 2-Finger Industrial Parallel Gripper & Tool Center Point (TCP)
+const IndustrialGripperTool: React.FC<{
+  pos: [number, number, number];
+}> = ({ pos }) => {
+  return (
+    <group position={pos}>
+      {/* Tool Flange Adapter Plate */}
+      <mesh position={[0, 0.02, 0]}>
+        <cylinderGeometry args={[0.048, 0.048, 0.025, 24]} />
+        <meshStandardMaterial color="#e2e8f0" metalness={0.9} roughness={0.2} />
+      </mesh>
+
+      {/* Gripper Actuator Transmission Gearbox Body */}
+      <mesh position={[0, 0.058, 0]}>
+        <boxGeometry args={[0.085, 0.048, 0.06]} />
+        <meshStandardMaterial color="#0284c7" metalness={0.8} roughness={0.25} />
+      </mesh>
+
+      {/* Status LED Bar on Gripper */}
+      <mesh position={[0, 0.058, 0.032]}>
+        <boxGeometry args={[0.055, 0.009, 0.005]} />
+        <meshStandardMaterial color="#22c55e" emissive="#16a34a" emissiveIntensity={1.8} />
+      </mesh>
+
+      {/* Left Machined Finger Jaw */}
+      <mesh position={[-0.03, 0.1, 0]}>
+        <boxGeometry args={[0.014, 0.06, 0.024]} />
+        <meshStandardMaterial color="#f8fafc" metalness={0.9} roughness={0.15} />
+      </mesh>
+      {/* Left High-Grip Safety Red Pad */}
+      <mesh position={[-0.022, 0.105, 0]}>
+        <boxGeometry args={[0.005, 0.04, 0.02]} />
+        <meshStandardMaterial color="#f43f5e" emissive="#e11d48" emissiveIntensity={0.6} />
+      </mesh>
+
+      {/* Right Machined Finger Jaw */}
+      <mesh position={[0.03, 0.1, 0]}>
+        <boxGeometry args={[0.014, 0.06, 0.024]} />
+        <meshStandardMaterial color="#f8fafc" metalness={0.9} roughness={0.15} />
+      </mesh>
+      {/* Right High-Grip Safety Red Pad */}
+      <mesh position={[0.022, 0.105, 0]}>
+        <boxGeometry args={[0.005, 0.04, 0.02]} />
+        <meshStandardMaterial color="#f43f5e" emissive="#e11d48" emissiveIntensity={0.6} />
+      </mesh>
+
+      {/* Tool Center Point (TCP) Laser Beacon Focal Dot */}
+      <mesh position={[0, 0.135, 0]}>
+        <sphereGeometry args={[0.018, 16, 16]} />
+        <meshStandardMaterial color="#f43f5e" emissive="#e11d48" emissiveIntensity={2.5} />
+      </mesh>
+    </group>
+  );
+};
 
 export const RoboticsStudio: React.FC<RoboticsStudioProps> = ({ experienceLevel }) => {
   const [links, setLinks] = useState<DHLink[]>(ROBOT_PRESETS[0].links);
@@ -416,59 +572,71 @@ export const RoboticsStudio: React.FC<RoboticsStudioProps> = ({ experienceLevel 
         {/* Three.js 3D Viewport */}
         <div className="flex-1 w-full h-full cursor-grab active:cursor-grabbing">
           <Canvas camera={{ position: [2.5, 2.0, 2.5], fov: 45 }}>
-            <ambientLight intensity={0.7} />
-            <directionalLight position={[5, 10, 5]} intensity={1.2} />
-            <pointLight position={[0, 2, 0]} intensity={0.6} color="#06b6d4" />
+            <ambientLight intensity={1.3} />
+            <directionalLight position={[8, 12, 8]} intensity={1.8} castShadow />
+            <directionalLight position={[-6, 6, -6]} intensity={0.8} color="#93c5fd" />
+            <pointLight position={[0, 3, 0]} intensity={1.0} color="#06b6d4" />
 
             <Grid
               infiniteGrid
-              fadeDistance={10}
+              fadeDistance={12}
               sectionSize={1}
-              sectionColor="#334155"
-              cellColor="#0f172a"
+              sectionColor="#475569"
+              cellColor="#1e293b"
               cellSize={0.2}
             />
 
-            {/* Robot Base Mount */}
-            <mesh position={[0, 0, 0]}>
-              <cylinderGeometry args={[0.2, 0.25, 0.08, 32]} />
-              <meshStandardMaterial color="#1e293b" metalness={0.8} roughness={0.3} />
-            </mesh>
+            {/* Heavy-Duty Cast Industrial Robot Base Plinth */}
+            <group position={[0, 0, 0]}>
+              {/* Floor Mounting Flange Base */}
+              <mesh position={[0, 0.04, 0]}>
+                <cylinderGeometry args={[0.26, 0.3, 0.08, 32]} />
+                <meshStandardMaterial color="#1e293b" metalness={0.9} roughness={0.2} />
+              </mesh>
 
-            {/* Render Kinematic Chain Links and Servos */}
+              {/* Rotary Turntable Hub Ring */}
+              <mesh position={[0, 0.09, 0]}>
+                <cylinderGeometry args={[0.22, 0.22, 0.04, 32]} />
+                <meshStandardMaterial color="#0284c7" metalness={0.8} roughness={0.25} />
+              </mesh>
+
+              {/* Glowing Turntable Bezel LED */}
+              <mesh position={[0, 0.11, 0]}>
+                <torusGeometry args={[0.21, 0.006, 16, 32]} />
+                <meshStandardMaterial color="#38bdf8" emissive="#06b6d4" emissiveIntensity={1.8} />
+              </mesh>
+            </group>
+
+            {/* Render High-Fidelity Machined Link Limbs */}
             {jointPositions.map((pos, i) => {
-              const isLast = i === jointPositions.length - 1;
               const nextPos = jointPositions[i + 1];
-
+              if (!nextPos) return null;
               return (
-                <group key={i}>
-                  {/* Joint Pivot Sphere */}
-                  <mesh position={pos}>
-                    <sphereGeometry args={[isLast ? 0.06 : 0.08, 32, 32]} />
-                    <meshStandardMaterial
-                      color={isLast ? "#22d3ee" : i === 0 ? "#f59e0b" : "#64748b"}
-                      emissive={isLast ? "#06b6d4" : "#000"}
-                      emissiveIntensity={isLast ? 0.8 : 0}
-                    />
-                  </mesh>
-
-                  {/* Connecting Link Line */}
-                  {nextPos && (
-                    <Line
-                      points={[pos, nextPos]}
-                      color={isLast ? "#22d3ee" : "#38bdf8"}
-                      lineWidth={4}
-                    />
-                  )}
-                </group>
+                <IndustrialLinkSegment
+                  key={`link-seg-${i}`}
+                  start={pos}
+                  end={nextPos}
+                  isLast={i === jointPositions.length - 2}
+                />
               );
             })}
 
-            {/* End-Effector Tool Pointer */}
-            <mesh position={endEffectorPos}>
-              <sphereGeometry args={[0.04, 16, 16]} />
-              <meshStandardMaterial color="#f43f5e" emissive="#e11d48" emissiveIntensity={1.0} />
-            </mesh>
+            {/* Render Revolute Joint Servo Motors */}
+            {jointPositions.map((pos, i) => {
+              const isLast = i === jointPositions.length - 1;
+              if (isLast) return null; // End-effector is rendered separately
+              return (
+                <IndustrialJointActuator
+                  key={`servo-joint-${i}`}
+                  pos={pos}
+                  isFirst={i === 0}
+                  isEnd={i === jointPositions.length - 2}
+                />
+              );
+            })}
+
+            {/* Render Industrial 2-Finger Parallel Gripper Tool at TCP */}
+            <IndustrialGripperTool pos={endEffectorPos} />
 
             <OrbitControls makeDefault enableDamping dampingFactor={0.05} />
             <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
