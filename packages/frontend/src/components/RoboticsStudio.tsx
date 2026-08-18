@@ -215,7 +215,7 @@ const IndustrialGripperTool: React.FC<{
 export const RoboticsStudio: React.FC<RoboticsStudioProps> = ({ experienceLevel }) => {
   const [links, setLinks] = useState<DHLink[]>(ROBOT_PRESETS[0].links);
   const [robotUnit, setRobotUnit] = useState<"mm" | "m">("mm");
-  const [robotVizMode, setRobotVizMode] = useState<"glb_arm" | "procedural_fk">("glb_arm");
+  const [robotVizMode, setRobotVizMode] = useState<"procedural_fk" | "glb_arm">("procedural_fk");
   const [copied, setCopied] = useState(false);
 
   const updateLink = (id: string, key: keyof DHLink, val: number) => {
